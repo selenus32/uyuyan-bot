@@ -62,7 +62,7 @@ async def christmas_sleeps(interaction: discord.Interaction, chosen_timezone: st
     random_int = random.randint(0,len(scripted_text)-1)
     chosen_text = scripted_text[random_int]
 
-    await interaction.response.send_message(f"{chosen_text} {client.user.mention} that's how i know there are {sleeps} sleeps until Christmas day in the timezone region of {timezone}.")
+    await interaction.response.send_message(f"{chosen_text} {interaction.user.mention} that's how i know there are {sleeps} sleeps until Christmas day in the timezone region of {timezone}.")
 
 #defines choices in previous function
 @christmas_sleeps.autocomplete("chosen_timezone")
