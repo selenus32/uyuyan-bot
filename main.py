@@ -49,9 +49,11 @@ scripted_text = list(['usedtah have a buddie down in baltimore he never heard of
 @app_commands.guilds(discord.Object(GUILD_ID))
 async def christmas_sleeps(interaction: discord.Interaction, chosen_timezone: str):
     timezone = pytz.timezone(chosen_timezone)
-
+    
     christmas_day = datetime.datetime(2023, 12, 25, 7, 0, 0, 0, timezone)
     current_time = datetime.datetime.now(timezone)
+    
+    timezone_name = current_time.tzname()
 
     time_diff = christmas_day - current_time
     sleeps = time_diff.days
@@ -62,7 +64,7 @@ async def christmas_sleeps(interaction: discord.Interaction, chosen_timezone: st
     random_int = random.randint(0,len(scripted_text)-1)
     chosen_text = scripted_text[random_int]
 
-    await interaction.response.send_message(f"{chosen_text} {interaction.user.mention} that's how i know there are {sleeps} sleeps until Christmas day in the timezone region of {timezone}.")
+    await interaction.response.send_message(f"{chosen_text} {interaction.user.mention} that's how i know there are {sleeps} sleeps until Christmas day in the timezone region of {timezone} ({timezone_name}).")
 
 #defines choices in previous function
 @christmas_sleeps.autocomplete("chosen_timezone")
