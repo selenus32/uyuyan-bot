@@ -106,7 +106,7 @@ async def christmas_sleeps(interaction: discord.Interaction, chosen_timezone: st
     time_diff = christmas_day - current_time
     sleeps = time_diff.days
 
-    if current_time.hour >= 18:
+    if current_time.hour >= 18  or current_time.hour <= 7:
         sleeps -= 1
 
     random_int = random.randint(0,len(scripted_text)-1)
