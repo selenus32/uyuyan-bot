@@ -17,10 +17,8 @@ from typing import List
 
 #import rest
 import ety
-import aiohttp
 import datetime
 import pytz
-import random
 import openai
 
 #class for initial bot setup
