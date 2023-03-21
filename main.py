@@ -5,6 +5,7 @@ load_dotenv()
 CLIENT_TOKEN = os.getenv('CLIENT_TOKEN') #string input
 GUILD_ID = int(os.getenv('GUILD_ID')) #integer input
 XENON = int(os.getenv('XENON')) #integer input
+OWNER_ID = int(os.getenv('OWNER_ID')) #integer input
 OPENAI_KEY = os.getenv('OPENAI_KEY')
 
 #import discord bot API
@@ -20,6 +21,7 @@ import aiohttp
 import datetime
 import pytz
 import random
+import openai
 
 #class for initial bot setup
 class Client(commands.Bot):
@@ -36,7 +38,16 @@ client = Client() #bot initialisation
 @client.event
 async def on_ready():
     print(f"We have logged in as {client.user}.")
-    
+
+#@client.event
+#async def on_message(message):
+#    if message.author == client.user:
+#       return 
+#
+#    if message.author.id == XENON:
+#       await message.channel.send('')
+
+
 #message command to sync slash commands
 @client.command()
 @commands.guild_only()
@@ -45,34 +56,52 @@ async def sync(ctx: Context):
     synced = await client.tree.sync(guild = discord.Object(GUILD_ID))
     print(f"Synced {synced} slash command(s) for {client.user}.")
 
-#@client.event
-#async def on_message(message):
-        #if message.author == client.user:
-         #    return 
+childlock = 0
 
-        #if message.author.id == XENON:
-         #   await message.channel.send('Haha?')
+def not_banned(ctx):
+    return ctx.author.id != XENON
 
+@client.command()
+@commands.guild_only()
+@commands.is_owner()
+async def childlock(ctx: Context, boolean: str):
+    global childlock
+    if boolean.lower() == 'true':
+        childlock = 1
+        await ctx.reply('Child-lock activated.')
+    if boolean.lower() == 'false':
+        childlock = 0
+        await ctx.reply('Child-lock deactivated.')
+    return childlock
 
-#@client.tree.command(name = "gpt", description = "prompt ChatGPT")
 @client.command()
 @app_commands.guilds(discord.Object(GUILD_ID))
+@commands.check(lambda ctx: not childlock or ctx.author.id == OWNER_ID)
+@commands.check(not_banned)
+async def dalle(ctx: Context, *, prompt: str):
+    openai.api_key = OPENAI_KEY
+    response = openai.Image.create(prompt=prompt,n=1,size="512x512")
+    image_url = response['data'][0]['url']
+    embed = discord.Embed(title="DALLE:", description=prompt)
+    print(image_url)
+    embed.set_image(url=image_url)
+    await ctx.reply(embed=embed)
+
+@client.command()
+@app_commands.guilds(discord.Object(GUILD_ID))
+@commands.check(lambda ctx: not childlock or ctx.author.id == OWNER_ID)
+@commands.check(not_banned)
 async def gpt(ctx: Context, *, prompt: str):
-    async with aiohttp.ClientSession() as session:
-        payload = {
-            "model": "text-davinci-003",
-            "prompt": prompt,
-            "temperature": 0.5,
-            "max_tokens": 50,
-            "presence_penalty": 0,
-            "frequency_penalty": 0,
-            "best_of": 1,
-        }
-        headers = {"Authorization": f"Bearer {OPENAI_KEY}"}
-        async with session.post("https://api.openai.com/v1/completions", json=payload, headers = headers) as resp:
-            response = await resp.json()
-            embed = discord.Embed(title="GPT:", description=response["choices"][0]["text"])
-            await ctx.reply(embed=embed)
+    openai.api_key = OPENAI_KEY
+    completion = openai.ChatCompletion.create(
+    model="gpt-3.5-turbo",
+    max_tokens=100,
+    messages=[
+        {"role": "user", "content": prompt}
+    ])
+    
+    embed = discord.Embed(title="gpt-3.5-turbo:", description=completion.choices[0].message.content)
+    await ctx.reply(embed=embed)
 
 #etymology tree for given word
 @client.tree.command(name = "ety_tree", description = "Show etymology tree of a given word")
@@ -88,9 +117,6 @@ async def ety_tree(interaction: discord.Interaction, given_word: str):
     embed = discord.Embed(title=f"Word origin(s) of {given_word}", description=f"{ety.origins(given_word, recursive=True)}")
     await interaction.response.send_message(embed=embed)
 
-#scripted_text
-scripted_text = list(['usedtah have a buddie down in baltimore he never heard of an pork roll egg n cheese. wiseguy.','my daughtah cindy got a new boyfriend. maddonee.','it could never take you five minutes to cook your grits, it takes the entire grit-eating world 20 minutes.','nothing will topa good pizzzah with led zep playing at the maddie square','You should try out mah pizzahhh! iz good', 'you call it a pizzzahh i call it a work of michelangelo. and im the one that made it', 'they tell me you gonna be something one day well. ohh madone.', 'my wife marie makes the best cupcakes','you need a sitdown my friend','you ever tasted a pizzzah from detroit? no wonder', 'God with a capital G, wiseguy', 'ohh madone.','what you call a doctor with three heads? probably by his name', 'there were three of them. a cheerleader, a broad with an expiry date of three yeasz, and my nephew who dont hear too good. who u pickin to make the best pizza in the penn? ME.', 'you know who make the best pizza in the penn dont yous', 'you ever heard of a machine who pics up all the rotten apples off the dirt? yeah me neither', 'whats new jersey got tah do with it', 'only one of us is making it out and im the best pizza maker in the penn', 'you ever seen heat 1995 film yeah itzza my favorite.', 'dont ever take gods name in vain', 'a chessboard with two kings. you call that a stalemate. i call that a good time', 'you want to hear three jokes well its only a matter of time before they call you up on stage', 'i coulda been a contender', 'you ever been to a lodge near the ocean yeah my great great great grandparents had one in napoli'])
-
 #Provides the number of sleeps until a certain few special days. Requires timezone input
 @client.tree.command(name = "sleeps_to_holiday", description = "Provides the number of sleeps until a certain few special days. Requires timezone input")
 @app_commands.guilds(discord.Object(GUILD_ID))
@@ -101,7 +127,6 @@ async def sleeps_to_holiday(interaction: discord.Interaction, chosen_holiday: st
     timezone_name = current_time.tzname()
 
     special_day = datetime.datetime.fromisoformat(chosen_holiday)
-    #christmas_day_aware = christmas_day.replace(tzinfo=timezone.timezone_name)
     special_day_aware = timezone.localize(special_day)
 
     time_diff = special_day_aware - current_time
@@ -112,17 +137,14 @@ async def sleeps_to_holiday(interaction: discord.Interaction, chosen_holiday: st
 
     holiday_name = None
     if chosen_holiday == '2023-12-25T07:00:00':
-        holiday_name = 'normal Christmas'
+        holiday_name = 'normal Christmas day'
     if chosen_holiday == '2024-01-07T07:00:00':
-        holiday_name = 'Serbian Christmas'
+        holiday_name = 'Serbian Christmas day'
     if chosen_holiday == '2023-11-12T07:00:00':
-        holiday_name = 'National Pizza With Everything (Except Anchovies)'
+        holiday_name = 'National Pizza With Everything (Except Anchovies) day'
 
-
-    random_int = random.randint(0,len(scripted_text)-1)
-    chosen_text = scripted_text[random_int]
-
-    await interaction.response.send_message(f"{chosen_text} {interaction.user.mention} that's how i know there are {sleeps} sleeps until {holiday_name} day in the timezone region of {timezone} ({timezone_name}).")
+    embed = discord.Embed(title=f"Orrrhooo orrrhooo", description=f"{interaction.user.mention} there are {sleeps} sleeps until {holiday_name} in the timezone region of {timezone} ({timezone_name}).")
+    await interaction.response.send_message(embed=embed)
 
 #defines choices in previous function
 @sleeps_to_holiday.autocomplete("chosen_timezone")
