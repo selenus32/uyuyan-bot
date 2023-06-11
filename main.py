@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 CLIENT_TOKEN = os.getenv('CLIENT_TOKEN') #string input
 GUILD_ID = int(os.getenv('GUILD_ID')) #integer input
-XENON = int(os.getenv('XENON')) #integer input
+BANNEDUSER = int(os.getenv('BANNEDUSER')) #integer input
 OWNER_ID = int(os.getenv('OWNER_ID')) #integer input
 OPENAI_KEY = os.getenv('OPENAI_KEY')
 
@@ -37,15 +37,6 @@ client = Client() #bot initialisation
 async def on_ready():
     print(f"We have logged in as {client.user}.")
 
-#@client.event
-#async def on_message(message):
-#    if message.author == client.user:
-#       return 
-#
-#    if message.author.id == XENON:
-#       await message.channel.send('')
-
-
 #message command to sync slash commands
 @client.command()
 @commands.guild_only()
@@ -54,10 +45,10 @@ async def sync(ctx: Context):
     synced = await client.tree.sync(guild = discord.Object(GUILD_ID))
     print(f"Synced {synced} slash command(s) for {client.user}.")
 
-childlock = 0
-
 def not_banned(ctx):
-    return ctx.author.id != XENON
+    return ctx.author.id != BANNEDUSER
+
+childlock = 0
 
 @client.command()
 @commands.guild_only()
@@ -141,7 +132,7 @@ async def sleeps_to_holiday(interaction: discord.Interaction, chosen_holiday: st
     if chosen_holiday == '2023-11-12T07:00:00':
         holiday_name = 'National Pizza With Everything (Except Anchovies) day'
 
-    embed = discord.Embed(title=f"Orrrhooo orrrhooo", description=f"{interaction.user.mention} there are {sleeps} sleeps until {holiday_name} in the timezone region of {timezone} ({timezone_name}).")
+    embed = discord.Embed(title=f"Sleeps until", description=f"{interaction.user.mention} there are {sleeps} sleeps until {holiday_name} in the timezone region of {timezone} ({timezone_name}).")
     await interaction.response.send_message(embed=embed)
 
 #defines choices in previous function
