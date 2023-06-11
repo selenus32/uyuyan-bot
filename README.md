@@ -5,9 +5,9 @@
 
 ## Requirements: ##
 * List of dependencies in the requirement.txt file.
-* Slash commands are to be synchronised with !sync.
 * A discord application with privileged intents.
 * An OpenAI API key.
+* Slash commands are to be synchronised with !sync.
 
 ## Terms of use: ##
 * spread christmas cheer :)
